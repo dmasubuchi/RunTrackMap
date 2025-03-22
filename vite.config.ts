@@ -8,6 +8,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Load environment variables
+import { loadEnv } from 'vite';
+
 export default defineConfig({
   plugins: [
     react(),

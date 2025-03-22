@@ -10,6 +10,9 @@
     "@azure/cosmos": "^3.17.3"
   },
   "devDependencies": {
-    "azure-functions-core-tools": "^4.0.5198"
-  }
+    "azure-functions-core-tools": "^4.0.6821"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

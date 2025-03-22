@@ -33,7 +33,27 @@ git clone https://github.com/dmasubuchi/RunTrackMap.git
 cd RunTrackMap
 ```
 
-2. **Install dependencies**
+2. **Automated Installation (Recommended)**
+
+We provide an installation script that will set up all necessary dependencies:
+
+```bash
+# Make the script executable
+chmod +x install.sh
+
+# Run the installation script
+./install.sh
+```
+
+The script will:
+- Install all Node.js dependencies
+- Install PlayFab SDK
+- Create the Azure Functions directory and install its dependencies
+- Set up environment files with placeholders
+
+3. **Manual Installation (Alternative)**
+
+If you prefer to install dependencies manually:
 
 ```bash
 # Install project dependencies
@@ -42,13 +62,18 @@ npm install
 # Install PlayFab SDK
 npm install playfab-sdk
 
+# Create Azure Functions directory if it doesn't exist
+mkdir -p azure-functions
+
 # Install Azure Functions dependencies
 cd azure-functions
-npm install
+npm init -y
+npm install @azure/cosmos
+npm install azure-functions-core-tools --save-dev
 cd ..
 ```
 
-3. **Configure environment variables**
+4. **Configure environment variables**
 
 Create a `.env` file in the client directory:
 
@@ -64,6 +89,8 @@ Create a `.env` file in the server directory:
 PLAYFAB_TITLE_ID=YOUR_PLAYFAB_TITLE_ID
 PLAYFAB_SECRET_KEY=YOUR_PLAYFAB_SECRET_KEY
 AZURE_FUNCTION_URL=YOUR_AZURE_FUNCTION_URL
+PORT=3000
+HOST=localhost
 ```
 
 ## Development

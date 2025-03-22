@@ -1,4 +1,4 @@
-import { PlayFab, PlayFabClient } from 'playfab-sdk';
+import { PlayFab, PlayFabClient, PlayFabError, PlayFabResult, LoginResult } from 'playfab-sdk';
 
 // Initialize PlayFab with title ID from environment variables
 export const initializePlayFab = () => {
@@ -7,5 +7,5 @@ export const initializePlayFab = () => {
   PlayFab.settings.titleId = titleId;
 };
 
-// Export PlayFab client for direct API access
-export { PlayFabClient };
+// Export PlayFab client and types for direct API access
+export { PlayFab, PlayFabClient, PlayFabError, PlayFabResult, LoginResult };

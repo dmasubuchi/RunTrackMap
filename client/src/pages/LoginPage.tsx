@@ -5,12 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "wouter";
 
 const LoginPage = () => {
   const { toast } = useToast();
-  const { login, loading: authLoading } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, loading } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -26,61 +24,18 @@ const LoginPage = () => {
       return;
     }
     
-    setIsLoading(true);
-    
     try {
-      await apiRequest('POST', '/api/auth/login', { username, password });
-      
-      // Invalidate queries to fetch fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-      
-      toast({
-        title: "Logged in",
-        description: "Welcome back!"
-      });
-      
-      // Redirect to home page
-      setLocation("/");
+      await login(username, password);
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid username or password",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      // Error handling is done in the useAuth hook
     }
   };
   
-  // For demo purposes, create a quick registration function
   const handleDemoLogin = async () => {
-    setIsLoading(true);
-    
     try {
-      // Login with demo account
-      await apiRequest('POST', '/api/auth/login', { 
-        username: "demo", 
-        password: "password" 
-      });
-      
-      // Invalidate queries to fetch fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
-      
-      toast({
-        title: "Logged in",
-        description: "Welcome to the demo account!"
-      });
-      
-      // Redirect to home page
-      setLocation("/");
+      await login("demo", "password");
     } catch (error) {
-      toast({
-        title: "Demo login failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      // Error handling is done in the useAuth hook
     }
   };
 
@@ -100,7 +55,7 @@ const LoginPage = () => {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -111,15 +66,15 @@ const LoginPage = () => {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </CardContent>
@@ -138,7 +93,7 @@ const LoginPage = () => {
             variant="outline"
             className="w-full"
             onClick={handleDemoLogin}
-            disabled={isLoading}
+            disabled={loading}
           >
             Demo Account
           </Button>

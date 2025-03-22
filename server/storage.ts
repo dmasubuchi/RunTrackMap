@@ -43,8 +43,8 @@ export class MemStorage implements IStorage {
         notifications: true,
         darkMode: false,
         voiceFeedback: true,
-        distanceUnit: "km" as "km" | "mi",
-        weightUnit: "kg" as "kg" | "lb"
+        distanceUnit: "km",
+        weightUnit: "kg"
       }
     };
     this.createUser(demoUser);
@@ -73,8 +73,8 @@ export class MemStorage implements IStorage {
         notifications: false,
         darkMode: false,
         voiceFeedback: false,
-        distanceUnit: "km" as "km" | "mi",
-        weightUnit: "kg" as "kg" | "lb"
+        distanceUnit: "km",
+        weightUnit: "kg"
       }
     };
     this.users.set(id, user);

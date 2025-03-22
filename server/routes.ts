@@ -5,6 +5,8 @@ import { insertUserSchema, insertActivitySchema, loginSchema, userPreferencesSch
 import { z, ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import session from 'express-session';
+import { configurePlayFab } from "./playfab";
+import { registerPlayFabRoutes } from "./playfabRoutes";
 
 // Extend the session interface to include userId
 declare module 'express-session' {
@@ -13,7 +15,16 @@ declare module 'express-session' {
   }
 }
 
+// Configure PlayFab with environment variables
+configurePlayFab({
+  titleId: process.env.PLAYFAB_TITLE_ID || 'YOUR_PLAYFAB_TITLE_ID',
+  developerSecretKey: process.env.PLAYFAB_SECRET_KEY || 'YOUR_PLAYFAB_SECRET_KEY',
+  azureFunctionUrl: process.env.AZURE_FUNCTION_URL || 'https://your-function-app.azurewebsites.net/api'
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register PlayFab routes
+  registerPlayFabRoutes(app);
   // Authentication middleware
   const requireAuth = (req: Request, res: Response, next: Function) => {
     if (!req.session || !req.session.userId) {

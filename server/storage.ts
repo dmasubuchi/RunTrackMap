@@ -106,7 +106,7 @@ export class MemStorage implements IStorage {
     
     // Create properly typed GeoPoint array
     const typedRoute = Array.isArray(insertActivity.route) 
-      ? insertActivity.route.map(point => ({
+      ? insertActivity.route.map((point: any) => ({
           lat: point.lat,
           lng: point.lng,
           timestamp: point.timestamp

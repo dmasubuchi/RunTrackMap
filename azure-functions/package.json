@@ -1,0 +1,15 @@
+{
+  "name": "runtrackmap-azure-functions",
+  "version": "1.0.0",
+  "description": "Azure Functions for RunTrackMap PlayFab integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^3.17.3"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.0.5198"
+  }
+}

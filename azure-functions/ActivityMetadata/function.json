@@ -1,0 +1,34 @@
+{
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["post"]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "cosmosDB",
+      "direction": "in",
+      "name": "activityMetadataInput",
+      "databaseName": "RunTrackMap",
+      "collectionName": "ActivityMetadata",
+      "connectionStringSetting": "CosmosDBConnection",
+      "sqlQuery": "SELECT * FROM c WHERE c.userId = {userId}"
+    },
+    {
+      "type": "cosmosDB",
+      "direction": "out",
+      "name": "activityMetadataOutput",
+      "databaseName": "RunTrackMap",
+      "collectionName": "ActivityMetadata",
+      "connectionStringSetting": "CosmosDBConnection",
+      "createIfNotExists": true
+    }
+  ]
+}

@@ -8,21 +8,24 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configure session middleware
+// セッション設定の強化
 const MemoryStore = createMemoryStore(session);
 app.use(session({
   cookie: { 
-    maxAge: 86400000, // 24 hours
-    secure: false 
+    maxAge: 86400000, // 24時間
+    secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPSを強制
+    httpOnly: true, // XSS対策
+    sameSite: 'strict' // CSRF対策
   },
   store: new MemoryStore({
-    checkPeriod: 86400000 // prune expired entries every 24h
+    checkPeriod: 86400000 // 24時間ごとに期限切れエントリを削除
   }),
   resave: false,
   saveUninitialized: false,
-  secret: 'run-tracker-session-secret'
+  secret: process.env.SESSION_SECRET || 'run-tracker-session-secret'
 }));
 
+// リクエストログの改善
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -37,13 +40,15 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      let logLine = `[${new Date().toISOString()}] ${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        // 機密情報をマスク
+        const maskedResponse = maskSensitiveData(capturedJsonResponse);
+        logLine += ` :: ${JSON.stringify(maskedResponse)}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 200) {
+        logLine = logLine.slice(0, 199) + "…";
       }
 
       log(logLine);
@@ -53,39 +58,60 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  const server = await registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+// 機密情報をマスクする関数
+function maskSensitiveData(data: Record<string, any>): Record<string, any> {
+  const sensitiveFields = ['password', 'token', 'secret'];
+  const masked = { ...data };
+  
+  for (const field of sensitiveFields) {
+    if (field in masked) {
+      masked[field] = '***MASKED***';
+    }
   }
+  
+  return masked;
+}
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  // サーバーのリッスン設定を変更
-  const port = process.env.PORT || 5000;
-const host = process.env.HOST || 'localhost';  // 0.0.0.0の代わりにlocalhostを使用
+(async () => {
+  try {
+    const server = await registerRoutes(app);
 
-  server.listen({
-    port,
-    host,
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+    // エラーハンドリングの改善
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = process.env.NODE_ENV === 'production' 
+        ? "Internal Server Error"
+        : err.message || "Internal Server Error";
 
+      // エラーログの出力
+      log(`[ERROR] ${err.stack || err.message}`);
+      
+      res.status(status).json({ 
+        message,
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+      });
+    });
+
+    // 開発環境と本番環境の設定
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    // サーバー起動設定
+    const port = process.env.PORT || 5000;
+    const host = process.env.HOST || 'localhost';
+
+    server.listen({
+      port,
+      host,
+      reusePort: true,
+    }, () => {
+      log(`[INFO] Server running on http://${host}:${port} in ${process.env.NODE_ENV || 'development'} mode`);
+    });
+  } catch (error) {
+    log(`[FATAL] Server failed to start: ${error}`);
+    process.exit(1);
+  }
 })();

@@ -7,8 +7,10 @@ import HomePage from "@/pages/HomePage";
 import HistoryPage from "@/pages/HistoryPage";
 import StatsPage from "@/pages/StatsPage";
 import ProfilePage from "@/pages/ProfilePage";
+import LoginPage from "@/pages/LoginPage";
 import BottomNavigation from "@/components/BottomNavigation";
-import { useState, useEffect } from "react";
+import PrivateRoute from "@/components/PrivateRoute";
+import { AuthProvider } from "@/hooks/useAuth";
 
 function Router() {
   const [location] = useLocation();
@@ -22,45 +24,51 @@ function Router() {
     return "home";
   };
 
+  // Only show bottom navigation when not on the login page
+  const showNav = location !== "/login";
+
   return (
     <>
       <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/history" component={HistoryPage} />
-        <Route path="/stats" component={StatsPage} />
-        <Route path="/profile" component={ProfilePage} />
-        <Route component={NotFound} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/">
+          <PrivateRoute>
+            <HomePage />
+          </PrivateRoute>
+        </Route>
+        <Route path="/history">
+          <PrivateRoute>
+            <HistoryPage />
+          </PrivateRoute>
+        </Route>
+        <Route path="/stats">
+          <PrivateRoute>
+            <StatsPage />
+          </PrivateRoute>
+        </Route>
+        <Route path="/profile">
+          <PrivateRoute>
+            <ProfilePage />
+          </PrivateRoute>
+        </Route>
+        <Route>
+          <NotFound />
+        </Route>
       </Switch>
-      <BottomNavigation activeTab={getActiveTab()} />
+      {showNav && <BottomNavigation activeTab={getActiveTab()} />}
     </>
   );
 }
 
 function App() {
-  // Load user session
-  useEffect(() => {
-    // Check for user session on app load
-    // This would typically check for a session cookie
-    const checkSession = async () => {
-      try {
-        const response = await fetch('/api/users/me', {
-          credentials: 'include'
-        });
-        // If session exists, user will be logged in
-      } catch (error) {
-        console.error('Session check failed:', error);
-      }
-    };
-    
-    checkSession();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <main className="relative h-screen overflow-hidden bg-neutral-100 text-foreground">
-        <Router />
-        <Toaster />
-      </main>
+      <AuthProvider>
+        <main className="relative h-screen overflow-hidden bg-neutral-100 text-foreground">
+          <Router />
+          <Toaster />
+        </main>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

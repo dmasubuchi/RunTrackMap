@@ -11,7 +11,8 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-): Promise<Response> {
+  options?: { on401: UnauthorizedBehavior }
+): Promise<any> {
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -19,8 +20,12 @@ export async function apiRequest(
     credentials: "include",
   });
 
+  if (options?.on401 === "returnNull" && res.status === 401) {
+    return null;
+  }
+
   await throwIfResNotOk(res);
-  return res;
+  return await res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import { UserPreferences } from '@shared/schema';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -27,6 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userData) {
           setUser(userData);
           setIsAuthenticated(true);
+          
+          // Apply dark mode setting
+          if (userData.preferences?.darkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -37,6 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkAuth();
   }, []);
+  
+  // Effect to update dark mode when user preferences change
+  useEffect(() => {
+    if (user?.preferences) {
+      if (user.preferences.darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [user?.preferences?.darkMode]);
 
   const login = async (username: string, password: string) => {
     try {

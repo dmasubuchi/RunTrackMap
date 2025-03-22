@@ -64,7 +64,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <main className="relative h-screen overflow-hidden bg-neutral-100 text-foreground">
+        <main className="relative h-screen overflow-hidden bg-background text-foreground">
           <Router />
           <Toaster />
         </main>

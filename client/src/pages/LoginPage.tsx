@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { usePlayFabAuth } from "@/hooks/usePlayFabAuth";
+import { initializePlayFab } from "@/lib/playfab";
 
 const LoginPage = () => {
   const { toast } = useToast();
-  const { login, loading } = useAuth();
+  const { login, isLoading: loading, error } = usePlayFabAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  
+  // Initialize PlayFab on component mount
+  useEffect(() => {
+    initializePlayFab();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,16 +32,35 @@ const LoginPage = () => {
     
     try {
       await login(username, password);
-    } catch (error) {
-      // Error handling is done in the useAuth hook
+      toast({
+        title: "Success",
+        description: "You have successfully logged in",
+        variant: "default"
+      });
+    } catch (err) {
+      // Error is displayed via the error state from usePlayFabAuth
+      toast({
+        title: "Login failed",
+        description: error || "An unexpected error occurred",
+        variant: "destructive"
+      });
     }
   };
   
   const handleDemoLogin = async () => {
     try {
-      await login("demo", "password");
-    } catch (error) {
-      // Error handling is done in the useAuth hook
+      await login("demo@example.com", "password");
+      toast({
+        title: "Success",
+        description: "You have successfully logged in with the demo account",
+        variant: "default"
+      });
+    } catch (err) {
+      toast({
+        title: "Demo login failed",
+        description: error || "An unexpected error occurred",
+        variant: "destructive"
+      });
     }
   };
 
@@ -43,8 +68,8 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-primary/10 to-background">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Run Tracker Pro</CardTitle>
-          <CardDescription>Sign in to track your activity</CardDescription>
+          <CardTitle className="text-2xl font-bold">RunTrackMap</CardTitle>
+          <CardDescription>Sign in to track your runs</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">

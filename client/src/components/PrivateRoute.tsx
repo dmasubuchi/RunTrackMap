@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/useAuth';
+import { usePlayFabAuth } from '@/hooks/usePlayFabAuth';
 import { Loader2 } from 'lucide-react';
 
 interface PrivateRouteProps {
@@ -8,8 +8,9 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading: loading } = usePlayFabAuth();
   const [location, setLocation] = useLocation();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     if (!loading && !isAuthenticated && location !== '/login') {

@@ -10,7 +10,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import LoginPage from "@/pages/LoginPage";
 import BottomNavigation from "@/components/BottomNavigation";
 import PrivateRoute from "@/components/PrivateRoute";
-import { AuthProvider } from "@/hooks/useAuth";
+import { PlayFabAuthProvider } from "@/hooks/usePlayFabAuth";
 
 function Router() {
   const [location] = useLocation();
@@ -63,12 +63,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <PlayFabAuthProvider>
         <main className="relative h-screen overflow-hidden bg-background text-foreground">
           <Router />
           <Toaster />
         </main>
-      </AuthProvider>
+      </PlayFabAuthProvider>
     </QueryClientProvider>
   );
 }

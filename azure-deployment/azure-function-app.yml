@@ -1,0 +1,40 @@
+# Azure Function App deployment configuration
+name: Deploy Azure Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'azure-functions/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        cd azure-functions
+        npm ci
+
+    - name: Deploy Azure Functions
+      uses: Azure/functions-action@v1
+      with:
+        app-name: 'runtrackmap-functions'
+        package: 'azure-functions'
+        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+      env:
+        COSMOSDB_ENDPOINT: ${{ secrets.COSMOSDB_ENDPOINT }}
+        COSMOSDB_KEY: ${{ secrets.COSMOSDB_KEY }}
+        COSMOSDB_DATABASE: ${{ secrets.COSMOSDB_DATABASE }}
+        COSMOSDB_CONTAINER: ${{ secrets.COSMOSDB_CONTAINER }}
+        PLAYFAB_TITLE_ID: ${{ secrets.PLAYFAB_TITLE_ID }}
+        PLAYFAB_SECRET_KEY: ${{ secrets.PLAYFAB_SECRET_KEY }}

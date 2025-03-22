@@ -1,0 +1,45 @@
+# Azure Static Web App configuration
+name: Azure Static Web App
+
+trigger:
+  branches:
+    include:
+      - main
+
+jobs:
+  build_and_deploy_job:
+    runs-on: ubuntu-latest
+    name: Build and Deploy
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build client
+        run: npm run build
+        env:
+          VITE_PLAYFAB_TITLE_ID: ${{ secrets.PLAYFAB_TITLE_ID }}
+      
+      - name: Deploy to Azure Static Web Apps
+        id: deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          app_location: "/client"
+          api_location: "/server"
+          output_location: "dist"
+          app_build_command: "npm run build"
+          api_build_command: "npm run build:server"
+        env:
+          PLAYFAB_TITLE_ID: ${{ secrets.PLAYFAB_TITLE_ID }}
+          PLAYFAB_SECRET_KEY: ${{ secrets.PLAYFAB_SECRET_KEY }}
+          AZURE_FUNCTION_URL: ${{ secrets.AZURE_FUNCTION_URL }}

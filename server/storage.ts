@@ -34,7 +34,7 @@ export class MemStorage implements IStorage {
     this.activityIdCounter = 1;
     
     // Add a demo user
-    this.createUser({
+    const demoUser: InsertUser = {
       username: "demo",
       password: "password",
       displayName: "Emily Johnson",
@@ -43,10 +43,11 @@ export class MemStorage implements IStorage {
         notifications: true,
         darkMode: false,
         voiceFeedback: true,
-        distanceUnit: "km",
-        weightUnit: "kg"
+        distanceUnit: "km" as "km" | "mi",
+        weightUnit: "kg" as "kg" | "lb"
       }
-    });
+    };
+    this.createUser(demoUser);
   }
 
   // User methods
@@ -72,8 +73,8 @@ export class MemStorage implements IStorage {
         notifications: false,
         darkMode: false,
         voiceFeedback: false,
-        distanceUnit: "km",
-        weightUnit: "kg"
+        distanceUnit: "km" as "km" | "mi",
+        weightUnit: "kg" as "kg" | "lb"
       }
     };
     this.users.set(id, user);
@@ -102,10 +103,22 @@ export class MemStorage implements IStorage {
 
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
+    
+    // Create properly typed GeoPoint array
+    const typedRoute = Array.isArray(insertActivity.route) 
+      ? insertActivity.route.map(point => ({
+          lat: point.lat,
+          lng: point.lng,
+          timestamp: point.timestamp
+        }))
+      : [];
+      
     const activity: Activity = { 
       ...insertActivity,
       id,
-      date: insertActivity.date || new Date()
+      date: insertActivity.date || new Date(),
+      route: typedRoute,
+      averagePace: insertActivity.averagePace || null
     };
     
     this.activities.set(id, activity);

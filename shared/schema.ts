@@ -8,7 +8,13 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name").notNull(),
   location: text("location"),
-  preferences: json("preferences").$type<UserPreferences>().default({}),
+  preferences: json("preferences").$type<UserPreferences>().default({
+    notifications: false,
+    darkMode: false,
+    voiceFeedback: false,
+    distanceUnit: "km",
+    weightUnit: "kg"
+  } as UserPreferences),
 });
 
 export const activities = pgTable("activities", {

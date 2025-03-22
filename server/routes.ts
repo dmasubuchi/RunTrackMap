@@ -4,6 +4,14 @@ import { storage } from "./storage";
 import { insertUserSchema, insertActivitySchema, loginSchema, userPreferencesSchema } from "@shared/schema";
 import { z, ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import session from 'express-session';
+
+// Extend the session interface to include userId
+declare module 'express-session' {
+  interface SessionData {
+    userId: number;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware

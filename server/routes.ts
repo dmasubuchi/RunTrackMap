@@ -16,8 +16,21 @@ declare module 'express-session' {
   }
 }
 
+/**
+ * Registers all API routes for the application
+ * 
+ * @param app - Express application instance
+ * @returns Promise resolving to HTTP server instance
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication middleware
+  /**
+   * Authentication middleware
+   * Verifies that the user is logged in before allowing access to protected routes
+   * 
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   */
   const requireAuth = (req: Request, res: Response, next: Function) => {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -30,6 +43,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(setupCsrf);
   app.use(validateCsrf);
 
+  /**
+   * Register a new user
+   * 
+   * @route POST /api/auth/register
+   * @param {Object} req.body - User registration data
+   * @returns {Object} User object with session
+   * @throws {400} If username already exists or validation fails
+   */
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -61,6 +82,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Authenticate a user and create a session
+   * 
+   * @route POST /api/auth/login
+   * @param {Object} req.body - User login credentials
+   * @returns {Object} User object with session
+   * @throws {401} If credentials are invalid
+   */
   app.post("/api/auth/login", async (req, res) => {
     try {
       const credentials = loginSchema.parse(req.body);
@@ -86,6 +115,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * End user session and log out
+   * 
+   * @route POST /api/auth/logout
+   * @returns {Object} Success message
+   */
   app.post("/api/auth/logout", (req, res) => {
     if (req.session) {
       req.session.destroy((err) => {
@@ -99,6 +134,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Get current authenticated user profile
+   * 
+   * @route GET /api/users/me
+   * @returns {Object} User profile data
+   * @throws {404} If user not found
+   */
   app.get("/api/users/me", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;
@@ -124,6 +166,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Update user preferences
+   * 
+   * @route PUT /api/users/preferences
+   * @param {Object} req.body - User preference settings
+   * @returns {Object} Success message
+   * @throws {404} If user not found
+   */
   app.put("/api/users/preferences", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;
@@ -146,6 +196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity routes
+  /**
+   * Get all activities for the current user
+   * 
+   * @route GET /api/activities
+   * @returns {Array<Activity>} List of user activities
+   */
   app.get("/api/activities", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;
@@ -161,6 +217,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Create a new activity
+   * 
+   * @route POST /api/activities
+   * @param {Object} req.body - Activity data
+   * @returns {Activity} Created activity object
+   */
   app.post("/api/activities", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;
@@ -180,6 +243,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Get a specific activity by ID
+   * 
+   * @route GET /api/activities/:id
+   * @param {string} req.params.id - Activity ID
+   * @returns {Activity} Activity object
+   * @throws {404} If activity not found
+   * @throws {403} If user doesn't own the activity
+   */
   app.get("/api/activities/:id", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;
@@ -209,6 +281,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * Get user statistics and achievements
+   * 
+   * @route GET /api/stats
+   * @returns {Object} User statistics, achievements, and weekly activity data
+   */
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;

@@ -7,6 +7,7 @@ import session from 'express-session';
 import { handleApiError } from './utils/errorHandler';
 import { hashPassword, comparePasswords } from './utils/auth';
 import { setupCsrf, validateCsrf } from './middleware/csrf';
+import { generateAchievements } from './utils/achievements';
 
 // Extend the session interface to include userId
 declare module 'express-session' {
@@ -218,66 +219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getUserStats(userId);
       const weeklyActivity = await storage.getWeeklyActivity(userId);
       
-      // Generate achievements based on activities
+      // Generate achievements using utility function
       const activities = await storage.getActivities(userId);
-      const achievements = [];
-      
-      if (activities.length > 0) {
-        // Find longest run
-        const longestRun = activities
-          .filter(a => a.type === "running")
-          .sort((a, b) => b.distance - a.distance)[0];
-          
-        if (longestRun) {
-          achievements.push({
-            type: "longest_run",
-            title: "Longest Run",
-            description: `${longestRun.distance.toFixed(1)}km on ${new Date(longestRun.date).toLocaleDateString()}`
-          });
-        }
-        
-        // Find fastest pace
-        const fastestPace = activities
-          .filter(a => a.type === "running" && a.averagePace && a.averagePace > 0)
-          .sort((a, b) => (a.averagePace || 0) - (b.averagePace || 0))[0];
-          
-        if (fastestPace) {
-          const pace = fastestPace.averagePace || 0;
-          const minutes = Math.floor(pace / 60);
-          const seconds = Math.floor(pace % 60);
-          achievements.push({
-            type: "fastest_pace",
-            title: "Fastest Pace",
-            description: `${minutes}'${seconds.toString().padStart(2, '0')}"/km on ${new Date(fastestPace.date).toLocaleDateString()}`
-          });
-        }
-        
-        // Find most active day
-        const activityByDay = new Map<string, number>();
-        activities.forEach(a => {
-          const date = new Date(a.date).toLocaleDateString();
-          activityByDay.set(date, (activityByDay.get(date) || 0) + a.distance);
-        });
-        
-        let mostActiveDay = "";
-        let maxActivity = 0;
-        
-        activityByDay.forEach((dist, date) => {
-          if (dist > maxActivity) {
-            maxActivity = dist;
-            mostActiveDay = date;
-          }
-        });
-        
-        if (mostActiveDay) {
-          const date = new Date(mostActiveDay);
-          achievements.push({
-            type: "most_active_day",
-            title: "Most Active Day",
-            description: `${date.toLocaleDateString('en-US', { weekday: 'long' })}, ${date.toLocaleDateString()}`
-          });
-        }
-      }
+      const achievements = generateAchievements(activities);
       
       res.status(200).json({
         ...stats,

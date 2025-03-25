@@ -29,6 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  // Helper function to update dark mode
+  const updateDarkMode = (darkMode: boolean) => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -38,11 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
           
           // Apply dark mode setting
-          if (userData.preferences?.darkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+          updateDarkMode(userData.preferences?.darkMode || false);
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -57,11 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Effect to update dark mode when user preferences change
   useEffect(() => {
     if (user?.preferences) {
-      if (user.preferences.darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      updateDarkMode(user.preferences.darkMode);
     }
   }, [user?.preferences?.darkMode]);
 

@@ -83,6 +83,44 @@ npm start
 
 Open your browser and navigate to `http://localhost:5173`
 
+## Development Guidelines
+
+### Code Style
+This project follows specific code style guidelines to maintain consistency:
+- Use TypeScript for type safety
+- Follow the ESLint configuration
+- Use async/await for asynchronous operations
+- Document public functions and interfaces with JSDoc
+- Use meaningful variable and function names
+- Keep functions small and focused on a single responsibility
+
+### Testing
+Run tests with:
+```bash
+npm run test
+```
+
+### Building
+Build the application for production with:
+```bash
+./build.sh
+```
+
+### Workflow
+1. Fork the repository
+2. Create a feature branch
+3. Implement your changes
+4. Ensure all tests pass
+5. Submit a pull request
+
+### Debugging
+- Use browser developer tools for frontend debugging
+- Check server logs for backend issues
+- Use the browser console to view client-side errors
+- Set `NODE_ENV=development` for detailed error messages
+
+See `CONTRIBUTING.md` for more detailed information on contributing to the project.
+
 ## Deployment
 
 ### Azure Static Web Apps

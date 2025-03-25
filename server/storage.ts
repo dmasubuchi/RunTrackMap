@@ -1,4 +1,4 @@
-import { activities, users, type User, type InsertUser, type Activity, type InsertActivity, type UserPreferences } from "@shared/schema";
+import { activities, users, type User, type InsertUser, type Activity, type InsertActivity, type UserPreferences, userPreferencesSchema } from "@shared/schema";
 
 export interface IStorage {
   // User operations
@@ -39,13 +39,13 @@ export class MemStorage implements IStorage {
       password: "password",
       displayName: "Emily Johnson",
       location: "Tokyo, Japan",
-      preferences: {
+      preferences: userPreferencesSchema.parse({
         notifications: true,
         darkMode: false,
         voiceFeedback: true,
         distanceUnit: "km",
         weightUnit: "kg"
-      }
+      })
     };
     this.createUser(demoUser);
   }
@@ -63,19 +63,20 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
+    const defaultPreferences = userPreferencesSchema.parse({
+      notifications: false,
+      darkMode: false,
+      voiceFeedback: false,
+      distanceUnit: "km",
+      weightUnit: "kg"
+    });
     const user: User = {
       id,
       username: insertUser.username,
       password: insertUser.password,
       displayName: insertUser.displayName,
       location: insertUser.location || null,
-      preferences: insertUser.preferences || {
-        notifications: false,
-        darkMode: false,
-        voiceFeedback: false,
-        distanceUnit: "km",
-        weightUnit: "kg"
-      }
+      preferences: insertUser.preferences ? userPreferencesSchema.parse(insertUser.preferences) : defaultPreferences
     };
     this.users.set(id, user);
     return user;
@@ -106,11 +107,14 @@ export class MemStorage implements IStorage {
     
     // Create properly typed GeoPoint array
     const typedRoute = Array.isArray(insertActivity.route) 
-      ? insertActivity.route.map((point: any) => ({
-          lat: point.lat,
-          lng: point.lng,
-          timestamp: point.timestamp
-        }))
+      ? insertActivity.route.map((point: any) => {
+          // Ensure each point has the correct properties with proper types
+          return {
+            lat: typeof point?.lat === 'number' ? point.lat : 0,
+            lng: typeof point?.lng === 'number' ? point.lng : 0,
+            timestamp: typeof point?.timestamp === 'number' ? point.timestamp : Date.now()
+          };
+        })
       : [];
       
     const activity: Activity = { 

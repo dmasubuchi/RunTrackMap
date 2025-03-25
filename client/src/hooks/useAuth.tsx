@@ -4,10 +4,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { UserPreferences } from '@shared/schema';
 
+interface UserProfile {
+  id: number;
+  username: string;
+  displayName: string;
+  location: string | null;
+  preferences: UserPreferences;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
-  user: any;
+  user: UserProfile | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -17,9 +25,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  // Helper function to update dark mode
+  const updateDarkMode = (darkMode: boolean) => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,11 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
           
           // Apply dark mode setting
-          if (userData.preferences?.darkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+          updateDarkMode(userData.preferences?.darkMode || false);
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -49,11 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Effect to update dark mode when user preferences change
   useEffect(() => {
     if (user?.preferences) {
-      if (user.preferences.darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      updateDarkMode(user.preferences.darkMode);
     }
   }, [user?.preferences?.darkMode]);
 

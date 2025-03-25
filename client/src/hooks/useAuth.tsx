@@ -4,10 +4,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { UserPreferences } from '@shared/schema';
 
+interface UserProfile {
+  id: number;
+  username: string;
+  displayName: string;
+  location: string | null;
+  preferences: UserPreferences;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
-  user: any;
+  user: UserProfile | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -17,7 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 

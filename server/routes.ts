@@ -2,9 +2,11 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertActivitySchema, loginSchema, userPreferencesSchema } from "@shared/schema";
-import { z, ZodError } from "zod";
-import { fromZodError } from "zod-validation-error";
+import { z } from "zod";
 import session from 'express-session';
+import { handleApiError } from './utils/errorHandler';
+import { hashPassword, comparePasswords } from './utils/auth';
+import { setupCsrf, validateCsrf } from './middleware/csrf';
 
 // Extend the session interface to include userId
 declare module 'express-session' {
@@ -23,6 +25,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // User routes
+  // Apply CSRF middleware to all routes
+  app.use(setupCsrf);
+  app.use(validateCsrf);
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -32,7 +38,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      const user = await storage.createUser(userData);
+      // Hash the password before storing
+      const hashedPassword = await hashPassword(userData.password);
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword
+      });
       if (req.session) {
         req.session.userId = user.id;
       }
@@ -45,10 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preferences: user.preferences
       });
     } catch (err) {
-      if (err instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(err).message });
-      }
-      res.status(500).json({ message: "Failed to create user" });
+      handleApiError(err, res, "Failed to create user");
     }
   });
 
@@ -57,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const credentials = loginSchema.parse(req.body);
       const user = await storage.getUserByUsername(credentials.username);
       
-      if (!user || user.password !== credentials.password) {
+      if (!user || !(await comparePasswords(credentials.password, user.password))) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
@@ -73,10 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preferences: user.preferences
       });
     } catch (err) {
-      if (err instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(err).message });
-      }
-      res.status(500).json({ message: "Login failed" });
+      handleApiError(err, res, "Login failed");
     }
   });
 
@@ -96,7 +101,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/me", requireAuth, async (req, res) => {
     try {
       const userId = req.session?.userId;
-      const user = await storage.getUser(userId as number);
+      if (typeof userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
+      const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -116,7 +125,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/preferences", requireAuth, async (req, res) => {
     try {
-      const userId = req.session?.userId as number;
+      const userId = req.session?.userId;
+      if (typeof userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
       const preferences = userPreferencesSchema.parse(req.body);
       
       const success = await storage.updateUserPreferences(userId, preferences);
@@ -127,17 +140,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({ message: "Preferences updated successfully" });
     } catch (err) {
-      if (err instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(err).message });
-      }
-      res.status(500).json({ message: "Failed to update preferences" });
+      handleApiError(err, res, "Failed to update preferences");
     }
   });
 
   // Activity routes
   app.get("/api/activities", requireAuth, async (req, res) => {
     try {
-      const userId = req.session?.userId as number;
+      const userId = req.session?.userId;
+      if (typeof userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
       const activities = await storage.getActivities(userId);
       
       res.status(200).json(activities);
@@ -148,7 +162,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/activities", requireAuth, async (req, res) => {
     try {
-      const userId = req.session?.userId as number;
+      const userId = req.session?.userId;
+      if (typeof userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
       const activityData = insertActivitySchema.parse({
         ...req.body,
         userId
@@ -157,16 +175,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activity = await storage.createActivity(activityData);
       res.status(201).json(activity);
     } catch (err) {
-      if (err instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(err).message });
-      }
-      res.status(500).json({ message: "Failed to create activity" });
+      handleApiError(err, res, "Failed to create activity");
     }
   });
 
   app.get("/api/activities/:id", requireAuth, async (req, res) => {
     try {
-      const userId = req.session?.userId as number;
+      const userId = req.session?.userId;
+      if (typeof userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
       const activityId = parseInt(req.params.id);
       
       if (isNaN(activityId)) {
@@ -191,7 +210,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
-      const userId = req.session?.userId as number;
+      const userId = req.session?.userId;
+      if (typeof userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
       const stats = await storage.getUserStats(userId);
       const weeklyActivity = await storage.getWeeklyActivity(userId);
       
